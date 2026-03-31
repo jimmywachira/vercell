@@ -3,6 +3,13 @@
 define('LARAVEL_START', microtime(true));
 
 try {
+    // Force production-safe flags before Laravel boots.
+    if (getenv('APP_ENV') === 'production') {
+        putenv('APP_DEBUG=false');
+        $_ENV['APP_DEBUG'] = 'false';
+        $_SERVER['APP_DEBUG'] = 'false';
+    }
+
     // Use /tmp for storage in serverless environments
     if (!is_dir('/tmp/storage')) {
         mkdir('/tmp/storage', 0755, true);
@@ -26,18 +33,19 @@ try {
     // Override storage path for serverless
     $app->useStoragePath('/tmp/storage');
 
-    // Ensure debug mode is off in production
-    if (getenv('APP_ENV') === 'production') {
-        putenv('APP_DEBUG=false');
-    }
-
     $app->handleRequest(\Illuminate\Http\Request::capture());
 } catch (Error $e) {
     // Check if this is the ReflectionProperty::isVirtual() error from var-dumper
     if (strpos($e->getMessage(), 'isVirtual') !== false && strpos($e->getFile(), 'Caster.php') !== false) {
-        // Compatibility error, return a simple homepage redirect
-        header('Location: /', true, 302);
-        exit(0);
+        error_log('Compatibility Error: ' . $e->getMessage());
+        error_log('Compatibility File: ' . $e->getFile() . ':' . $e->getLine());
+
+        header('Content-Type: application/json', true, 500);
+        echo json_encode([
+            'error' => 'Internal Server Error',
+            'message' => 'PHP runtime is incompatible with current vendor packages.',
+        ]);
+        exit(1);
     }
 
     error_log('Laravel Error: ' . $e->getMessage());
