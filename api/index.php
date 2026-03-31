@@ -3,6 +3,8 @@
 define('LARAVEL_START', microtime(true));
 
 try {
+    $tmpCacheDir = '/tmp/storage/framework/cache';
+
     // Force production-safe flags before Laravel boots.
     if (getenv('APP_ENV') === 'production') {
         putenv('APP_DEBUG=false');
@@ -10,13 +12,36 @@ try {
         $_SERVER['APP_DEBUG'] = 'false';
     }
 
+    // Route all Laravel cache artifacts to writable storage on serverless.
+    putenv('APP_SERVICES_CACHE=' . $tmpCacheDir . '/services.php');
+    putenv('APP_PACKAGES_CACHE=' . $tmpCacheDir . '/packages.php');
+    putenv('APP_CONFIG_CACHE=' . $tmpCacheDir . '/config.php');
+    putenv('APP_ROUTES_CACHE=' . $tmpCacheDir . '/routes-v7.php');
+    putenv('APP_EVENTS_CACHE=' . $tmpCacheDir . '/events.php');
+
+    $_ENV['APP_SERVICES_CACHE'] = $tmpCacheDir . '/services.php';
+    $_ENV['APP_PACKAGES_CACHE'] = $tmpCacheDir . '/packages.php';
+    $_ENV['APP_CONFIG_CACHE'] = $tmpCacheDir . '/config.php';
+    $_ENV['APP_ROUTES_CACHE'] = $tmpCacheDir . '/routes-v7.php';
+    $_ENV['APP_EVENTS_CACHE'] = $tmpCacheDir . '/events.php';
+
+    $_SERVER['APP_SERVICES_CACHE'] = $tmpCacheDir . '/services.php';
+    $_SERVER['APP_PACKAGES_CACHE'] = $tmpCacheDir . '/packages.php';
+    $_SERVER['APP_CONFIG_CACHE'] = $tmpCacheDir . '/config.php';
+    $_SERVER['APP_ROUTES_CACHE'] = $tmpCacheDir . '/routes-v7.php';
+    $_SERVER['APP_EVENTS_CACHE'] = $tmpCacheDir . '/events.php';
+
     // Use /tmp for storage in serverless environments
-    if (!is_dir('/tmp/storage')) {
-        mkdir('/tmp/storage', 0755, true);
-        mkdir('/tmp/storage/framework', 0755, true);
+    if (!is_dir('/tmp/storage/framework/sessions')) {
         mkdir('/tmp/storage/framework/sessions', 0755, true);
+    }
+    if (!is_dir('/tmp/storage/framework/cache')) {
         mkdir('/tmp/storage/framework/cache', 0755, true);
+    }
+    if (!is_dir('/tmp/storage/framework/views')) {
         mkdir('/tmp/storage/framework/views', 0755, true);
+    }
+    if (!is_dir('/tmp/storage/logs')) {
         mkdir('/tmp/storage/logs', 0755, true);
     }
 
