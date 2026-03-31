@@ -2,6 +2,17 @@
 
 define('LARAVEL_START', microtime(true));
 
+// Polyfill for ReflectionProperty::isVirtual() (PHP 8.1+)
+if (!method_exists('ReflectionProperty', 'isVirtual')) {
+    if (!class_exists('ReflectionPropertyPolyfill')) {
+        class ReflectionPropertyPolyfill extends ReflectionProperty {
+            public function isVirtual() {
+                return false;
+            }
+        }
+    }
+}
+
 try {
     // Use /tmp for storage in serverless environments
     if (!is_dir('/tmp/storage')) {
@@ -25,6 +36,11 @@ try {
 
     // Override storage path for serverless
     $app->useStoragePath('/tmp/storage');
+    
+    // Ensure debug mode is off in production
+    if (getenv('APP_ENV') === 'production') {
+        putenv('APP_DEBUG=false');
+    }
 
     $app->handleRequest(\Illuminate\Http\Request::capture());
 } catch (Throwable $e) {
@@ -32,10 +48,6 @@ try {
     error_log('Error File: ' . $e->getFile() . ':' . $e->getLine());
     error_log('Stack Trace: ' . $e->getTraceAsString());
 
-    header('Content-Type: application/json', true, 500);
-    echo json_encode([
-        'error' => 'Internal Server Error',
-        'message' => $e->getMessage(),
         'file' => $e->getFile(),
         'line' => $e->getLine(),
     ]);
