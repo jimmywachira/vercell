@@ -31,7 +31,7 @@ try {
     error_log('Laravel Error: ' . $e->getMessage());
     error_log('Error File: ' . $e->getFile() . ':' . $e->getLine());
     error_log('Stack Trace: ' . $e->getTraceAsString());
-    
+
     header('Content-Type: application/json', true, 500);
     echo json_encode([
         'error' => 'Internal Server Error',
